@@ -1,4 +1,14 @@
-import { Button, Form, Input } from "@heroui/react";
+import { Form } from "@base-ui/react/form";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  Field,
+  FieldSet,
+  FieldGroup,
+  FieldLabel,
+  FieldError,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import minifluxAPI from "@/api/miniflux";
 import { renameModalOpen, currentCategoryId } from "@/stores/modalStore.js";
@@ -8,7 +18,7 @@ import { categories } from "@/stores/feedsStore";
 import { useTranslation } from "react-i18next";
 import CustomModal from "@/components/ui/CustomModal.jsx";
 import { updateCategory } from "@/db/storage";
-
+import { reportError } from "@/lib/errors.js";
 export default function RenameModal() {
   const { t } = useTranslation();
   const $categories = useStore(categories);
@@ -19,21 +29,22 @@ export default function RenameModal() {
   const [newTitle, setNewTitle] = useState("");
   const [loading, setLoading] = useState(false);
   const $renameModalOpen = useStore(renameModalOpen);
-
   useEffect(() => {
     if (categoryId) {
-      setNewTitle($categories.find((c) => c.id === parseInt(categoryId))?.title || "");
+      setNewTitle(
+        $categories.find((c) => c.id === parseInt(categoryId))?.title || "",
+      );
     }
   }, [$categories, categoryId]);
-
   const onClose = () => {
     renameModalOpen.set(false);
     currentCategoryId.set(null);
     if (categoryId) {
-      setNewTitle($categories.find((c) => c.id === parseInt(categoryId))?.title || "");
+      setNewTitle(
+        $categories.find((c) => c.id === parseInt(categoryId))?.title || "",
+      );
     }
   };
-
   const handleRename = async (e) => {
     e.preventDefault();
     if (!categoryId) return;
@@ -45,62 +56,72 @@ export default function RenameModal() {
       // 更新内存中的 store
       categories.set(
         $categories.map((c) =>
-          c.id === parseInt(categoryId) ? { ...c, title: newTitle } : c,
+          c.id === parseInt(categoryId)
+            ? {
+                ...c,
+                title: newTitle,
+              }
+            : c,
         ),
       );
       onClose();
     } catch (error) {
-      console.error("重命名分类失败:", error);
+      reportError(error, "category.rename");
     } finally {
       setLoading(false);
       setNewTitle(""); // 重置输入框
     }
   };
-
   return (
     <CustomModal
       open={$renameModalOpen}
       onOpenChange={onClose}
       title={t("articleList.renameCategory.title")}
-    >
-      <Form
-        className="w-full justify-center items-center flex flex-col gap-4 px-4 pb-4"
-        validationBehavior="native"
-        onSubmit={(e) => handleRename(e)}
-      >
-        <Input
-          isRequired
-          labelPlacement="outside"
-          size="sm"
-          label={t("articleList.renameCategory.categoryName")}
-          variant="faded"
-          name="title"
-          placeholder={t("articleList.renameCategory.categoryNamePlaceholder")}
-          errorMessage={t("articleList.renameCategory.categoryNameRequired")}
-          value={newTitle}
-          onValueChange={setNewTitle}
-        />
-        <div className="flex flex-col md:flex-row-reverse gap-2 w-full">
-          <Button
-            color="primary"
-            fullWidth
-            type="submit"
-            isLoading={loading}
-            size="sm"
-            className="border-primary border shadow-custom-button bg-primary bg-linear-to-b from-white/15 to-transparent text-sm"
-          >
-            {t("common.save")}
-          </Button>
-          <Button
-            fullWidth
-            onPress={onClose}
-            size="sm"
-            variant="flat"
-            className="border text-sm"
-          >
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} className="w-full">
             {t("common.cancel")}
           </Button>
-        </div>
+          <Button
+            type="submit"
+            form="rename-form"
+            disabled={loading}
+            aria-busy={loading}
+            className="w-full"
+          >
+            {loading && <Spinner />}
+            {t("common.save")}
+          </Button>
+        </>
+      }
+    >
+      <Form
+        id="rename-form"
+        className="w-full px-4 pb-4"
+        onSubmit={handleRename}
+      >
+        <FieldSet>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="title">
+                {t("articleList.renameCategory.categoryName")}
+              </FieldLabel>
+              <Input
+                placeholder={t(
+                  "articleList.renameCategory.categoryNamePlaceholder",
+                )}
+                value={newTitle}
+                onChange={(event) => setNewTitle(event.target.value)}
+                required={true}
+                name="title"
+                id="title"
+              />
+              <FieldError>
+                {t("articleList.renameCategory.categoryNameRequired")}
+              </FieldError>
+            </Field>
+          </FieldGroup>
+        </FieldSet>
       </Form>
     </CustomModal>
   );

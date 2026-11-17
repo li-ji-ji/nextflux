@@ -1,81 +1,95 @@
-import { useIsMobile } from "@/hooks/use-mobile.jsx";
+import { useIsMedium } from "@/hooks/use-mobile.jsx";
+import { cn } from "@/lib/utils";
+import { CloseButton } from "@/components/ui/close-button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Drawer,
-  DrawerBody,
   DrawerContent,
   DrawerHeader,
-  Modal,
-  ModalContent,
-  ModalHeader,
-} from "@heroui/react";
-import { MiniCloseButton } from "@/components/ui/MiniCloseButton.jsx";
-import { popUpVariants } from "@/lib/motion";
+  DrawerTitle,
+  DrawerFooter,
+  DrawerClose,
+} from "@/components/ui/drawer";
 
-export default function CustomModal({ open, onOpenChange, title, children }) {
-  const { isMedium } = useIsMobile();
+export default function CustomModal({
+  open,
+  onOpenChange,
+  onOpenChangeComplete,
+  title,
+  fixedHeight = false,
+  children,
+  footer,
+}) {
+  const isMedium = useIsMedium();
+  const handleOpenChange = (nextOpen) => {
+    if (!nextOpen) onOpenChange(false);
+  };
   if (isMedium) {
     return (
       <Drawer
-        isOpen={open}
-        onOpenChange={onOpenChange}
-        placement="bottom"
-        hideCloseButton
-        radius="sm"
-        classNames={{
-          base: "flex flex-col items-center max-h-[90vh]",
-          header: "text-base font-medium p-4",
-          body: "px-0 pt-0 pb-safe",
-        }}
+        open={open}
+        onOpenChange={handleOpenChange}
+        onOpenChangeComplete={onOpenChangeComplete}
+        showSwipeHandle
       >
-        {/*<Drawer.Portal>*/}
-        {/*  <Drawer.Overlay className="fixed inset-0 bg-black/50 z-20" />*/}
-        {/*  <Drawer.Content className="bg-background flex flex-col fixed bottom-0 left-0 right-0 max-h-[82vh] rounded-t-lg z-20">*/}
-        {/*    <div className="w-full mx-auto overflow-auto px-4 pt-2 rounded-t-lg">*/}
-        {/*      <div className="max-w-sm mx-auto">*/}
-        {/*        <Drawer.Handle />*/}
-        {/*        <Drawer.Title className="font-medium text-foreground py-4 pl-4">*/}
-        {/*          {title}*/}
-        {/*        </Drawer.Title>*/}
-        {/*        {content}*/}
-        {/*      </div>*/}
-        {/*    </div>*/}
-        {/*  </Drawer.Content>*/}
-        {/*</Drawer.Portal>*/}
-        <DrawerContent>
-          {() => (
-            <div className="max-w-sm w-full">
-              <DrawerHeader>{title}</DrawerHeader>
-              <DrawerBody>{children}</DrawerBody>
-            </div>
+        <DrawerContent
+          className={cn("max-h-[85dvh]", fixedHeight && "h-[80dvh]")}
+        >
+          <DrawerHeader className="px-4 pb-4 text-left">
+            <DrawerTitle>{title}</DrawerTitle>
+            <DrawerClose
+              render={<CloseButton className="absolute top-3 right-3" />}
+            />
+          </DrawerHeader>
+          <ScrollArea
+            className="min-h-0 flex-1"
+            viewportClassName="overscroll-contain"
+          >
+            {children}
+          </ScrollArea>
+          {footer && (
+            <DrawerFooter className="grid min-w-0 grid-flow-col auto-cols-fr [&>button]:min-w-0 [&>button]:h-auto [&>button]:min-h-9 [&>button]:whitespace-normal border-t p-4 pb-safe-or-4">
+              {footer}
+            </DrawerFooter>
           )}
         </DrawerContent>
       </Drawer>
     );
   }
   return (
-    <Modal
-      isOpen={open}
-      onClose={onOpenChange}
-      motionProps={{
-        variants: popUpVariants,
-      }}
-      placement="center"
-      scrollBehavior="inside"
-      radius="md"
-      size="sm"
-      hideCloseButton
-      classNames={{
-        header: "px-4 pt-3 pb-4 flex justify-between text-base font-medium",
-        base: "p-0 shadow-custom!",
-      }}
+    <Dialog
+      open={open}
+      onOpenChange={handleOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
     >
-      <ModalContent>
-        <ModalHeader>
-          <div>{title}</div>
-          <MiniCloseButton onClose={onOpenChange} />
-        </ModalHeader>
-        {children}
-      </ModalContent>
-    </Modal>
+      <DialogContent
+        className={cn(
+          "flex max-h-[85dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg",
+          fixedHeight && "h-[66dvh]",
+        )}
+      >
+        <DialogHeader className="p-4">
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <ScrollArea
+          className="min-h-0 flex-1"
+          viewportClassName="overscroll-contain"
+        >
+          {children}
+        </ScrollArea>
+        {footer && (
+          <DialogFooter className="m-0 grid min-w-0 grid-flow-col auto-cols-fr [&>button]:min-w-0 [&>button]:h-auto [&>button]:min-h-9 [&>button]:whitespace-normal rounded-none border-t p-4">
+            {footer}
+          </DialogFooter>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

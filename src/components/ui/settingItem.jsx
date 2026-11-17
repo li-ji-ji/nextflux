@@ -1,37 +1,69 @@
 import { updateSettings } from "@/stores/settingsStore.js";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/ui/kbd";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
-  Button,
-  Chip,
-  cn,
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
-  Kbd,
-  Slider,
-  Switch,
-  Tab,
-  Tabs,
-} from "@heroui/react";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+} from "@/components/ui/select";
+import { Field, FieldLabel, FieldTitle } from "@/components/ui/field";
+import { Info } from "lucide-react";
 
-import { ChevronsUpDown } from "lucide-react";
-
-const bgColor = "bg-content1/80 dark:bg-content2/30";
-
-export const ItemWrapper = ({ title, children }) => {
-  return (
-    <div className="settings-group">
-      <div className="text-xs text-default-500 font-medium ml-2.5 mb-1">
-        {title}
-      </div>
-      <div className="rounded-xl overflow-hidden border shadow-xs">
-        {children}
-      </div>
-    </div>
-  );
+const rowClass = "bg-secondary/60 dark:bg-secondary/30 min-h-12 px-2.5 py-2";
+const keySymbols = {
+  command: "⌘",
+  cmd: "⌘",
+  ctrl: "Ctrl",
+  shift: "⇧",
+  alt: "⌥",
+  option: "⌥",
+  enter: "↵",
+  up: "↑",
+  down: "↓",
+  escape: "Esc",
 };
 
-export const SliderItem = ({
+function DescriptionTip({ description }) {
+  if (!description) return null;
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        delay={0}
+        render={
+          <Button variant="ghost" size="icon-xs" aria-label={description} />
+        }
+      >
+        <Info />
+      </TooltipTrigger>
+      <TooltipContent>{description}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+export function ItemWrapper({ title, children }) {
+  return (
+    <section className="settings-group">
+      <h3 className="mb-1 ml-2.5 text-xs font-medium text-muted-foreground">
+        {title}
+      </h3>
+      <div className="overflow-hidden rounded-xl shadow-custom">{children}</div>
+    </section>
+  );
+}
+
+export function SliderItem({
   label,
   icon,
   settingName,
@@ -39,185 +71,158 @@ export const SliderItem = ({
   max,
   min,
   step,
-}) => {
+  description,
+}) {
   return (
-    <div className={`grid gap-2 ${bgColor} p-2.5`}>
-      <div className="text-xs text-content2-foreground">{label}</div>
+    <Field className={cn(rowClass, "gap-2")}>
       <div className="flex items-center gap-2">
         {icon}
-        <Slider
-          aria-label={label}
-          value={[settingValue]}
-          onChange={(value) => updateSettings({ [settingName]: value[0] })}
-          maxValue={max}
-          minValue={min}
-          showSteps
-          step={step}
-          classNames={{
-            trackWrapper: "rounded-full shadow-custom-inner bg-default/40",
-            track:
-              "h-1.5 my-0 border-s-primary! border-e-transparent! bg-transparent",
-            filler:
-              "bg-primary after:absolute after:-right-3 after:w-3 after:bg-primary",
-            step: "data-[in-range=true]:bg-primary mt-1.5 w-0.5 h-0.5",
-          }}
-          renderThumb={(props) => (
-            <div
-              {...props}
-              className="group h-4 w-5 top-1/2 bg-white shadow-custom rounded-full cursor-grab data-[dragging=true]:cursor-grabbing transition-size data-[dragging=true]:w-6 data-[dragging=true]:h-5"
-            ></div>
-          )}
-        />
-        <Chip
-          size="sm"
-          variant="flat"
-          classNames={{
-            base: "shadow-custom-inner",
-            content: "w-10 justify-center text-center",
-          }}
+        <FieldLabel id={settingName + "-label"}>{label}</FieldLabel>
+        <DescriptionTip description={description} />
+        <output
+          className="ml-auto text-sm text-muted-foreground"
+          aria-live="off"
         >
           {settingValue}
-        </Chip>
+        </output>
       </div>
-    </div>
+      <Slider
+        aria-labelledby={settingName + "-label"}
+        value={[settingValue]}
+        min={min}
+        max={max}
+        step={step}
+        onValueChange={(value) =>
+          updateSettings({
+            [settingName]: Array.isArray(value) ? value[0] : value,
+          })
+        }
+      />
+    </Field>
   );
-};
+}
 
-export const SwitchItem = ({
+export function SwitchItem({
   label,
   icon,
   settingName,
   settingValue,
   disabled = false,
-}) => {
+  description,
+}) {
   return (
-    <div
-      className={`flex justify-between items-center gap-2 ${bgColor} px-2.5 py-3`}
-    >
-      <div className="flex items-center gap-2">
+    <Field orientation="horizontal" className={rowClass} disabled={disabled}>
+      <div className="flex flex-1 items-center gap-2">
         {icon}
-        <div className="text-sm text-foreground line-clamp-1">{label}</div>
+        <FieldLabel htmlFor={settingName}>{label}</FieldLabel>
+        <DescriptionTip description={description} />
       </div>
       <Switch
-        isSelected={settingValue}
-        classNames={{
-          wrapper: "shadow-custom-inner h-6 w-12 px-0.5 overflow-visible",
-          thumb: cn(
-            "w-7 h-5 shadow-md",
-            "group-data-[hover=true]:border-primary",
-            //selected
-            "group-data-[selected=true]:ms-4",
-            // pressed
-            "group-data-[pressed=true]:w-7.5",
-            "group-data-pressed:group-data-selected:ms-3.5!",
-          ),
-        }}
-        isDisabled={disabled}
-        onValueChange={(value) => updateSettings({ [settingName]: value })}
+        id={settingName}
+        aria-label={label}
+        checked={settingValue}
+        disabled={disabled}
+        onCheckedChange={(checked) =>
+          updateSettings({ [settingName]: checked })
+        }
       />
-    </div>
-  );
-};
-
-export function SelItem({ label, icon, settingName, settingValue, options }) {
-  return (
-    <div className={`flex justify-between items-center gap-2 ${bgColor} p-2.5`}>
-      <div className="flex items-center gap-2">
-        {icon}
-        <div className="text-sm text-foreground line-clamp-1">{label}</div>
-      </div>
-      <Dropdown>
-        <DropdownTrigger>
-          <Button
-            className="capitalize gap-1 pr-1.5 h-7 rounded-md bg-content1 dark:bg-default shadow-custom-cursor!"
-            variant="solid"
-            size="sm"
-            endContent={
-              <ChevronsUpDown className="size-4 shrink-0 text-default-400" />
-            }
-          >
-            {options.find((opt) => opt.value === settingValue.toString())
-              ?.label || settingValue}
-          </Button>
-        </DropdownTrigger>
-        <DropdownMenu
-          disallowEmptySelection
-          aria-label="Single selection example"
-          selectedKeys={new Set([settingValue])}
-          selectionMode="single"
-          variant="flat"
-          onSelectionChange={(values) =>
-            updateSettings({ [settingName]: values.currentKey })
-          }
-        >
-          {options.map((option) => (
-            <DropdownItem key={option.value} style={option.style}>
-              {option.label}
-            </DropdownItem>
-          ))}
-        </DropdownMenu>
-      </Dropdown>
-    </div>
+    </Field>
   );
 }
 
-export function GroupItem({ label, icon, settingName, settingValue, options }) {
+export function SelItem({
+  label,
+  icon,
+  settingName,
+  settingValue,
+  options,
+  description,
+  onValueChange = (value) => updateSettings({ [settingName]: value }),
+}) {
   return (
-    <div
-      className={`flex justify-between items-center gap-2 ${bgColor} px-2.5 h-12`}
-    >
-      <div className="flex items-center gap-2">
+    <Field orientation="horizontal" className={rowClass}>
+      <div className="flex flex-1 items-center gap-2">
         {icon}
-        <div className="text-sm text-foreground">{label}</div>
+        <FieldTitle variant="setting" id={settingName + "-label"}>
+          {label}
+        </FieldTitle>
+        <DescriptionTip description={description} />
       </div>
-      <Tabs
-        aria-label={settingName}
+      <Select
+        items={options.map((option) => ({
+          value: String(option.value),
+          label: option.label,
+        }))}
+        value={String(settingValue)}
+        onValueChange={(value) => value !== null && onValueChange(value)}
+      >
+        <SelectTrigger size="sm" aria-labelledby={settingName + "-label"}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent variant="glass">
+          <SelectGroup>
+            {options.map((option) => (
+              <SelectItem key={option.value} value={String(option.value)}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </Field>
+  );
+}
+
+export function GroupItem({
+  label,
+  icon,
+  settingName,
+  settingValue,
+  options,
+  description,
+}) {
+  return (
+    <Field orientation="horizontal" className={rowClass}>
+      <div className="flex flex-1 items-center gap-2">
+        {icon}
+        <FieldTitle variant="setting" id={settingName + "-label"}>
+          {label}
+        </FieldTitle>
+        <DescriptionTip description={description} />
+      </div>
+      <ToggleGroup
+        variant="outline"
         size="sm"
-        variant="solid"
-        classNames={{
-          tabList:
-            "bg-default-100/90 backdrop-blur-md shadow-custom-inner p-px gap-0 rounded-small overflow-visible",
-          tab: "py-1 h-7",
-          cursor: "bg-content1 shadow-custom-cursor! rounded-small",
-        }}
-        selectedKey={settingValue}
-        onSelectionChange={(value) => {
-          updateSettings({ [settingName]: value });
+        spacing={0}
+        value={[settingValue]}
+        aria-labelledby={settingName + "-label"}
+        onValueChange={(values) => {
+          if (values.length) updateSettings({ [settingName]: values[0] });
         }}
       >
         {options.map((option) => (
-          <Tab
+          <ToggleGroupItem
             key={option.value}
-            title={
-              <div className="flex items-center space-x-2">
-                {option.icon}
-                {option.label && <span>{option.label}</span>}
-              </div>
-            }
-          />
+            value={option.value}
+            aria-label={option.label || String(option.value)}
+          >
+            {option.icon}
+            {option.label}
+          </ToggleGroupItem>
         ))}
-      </Tabs>
-    </div>
+      </ToggleGroup>
+    </Field>
   );
 }
 
 export function KeyboardItem({ desc, kbdKey, keyStr }) {
   return (
-    <div
-      className={`flex justify-between items-center gap-2 ${bgColor} px-2.5 py-3`}
-    >
-      <div className="flex items-center gap-2">
-        <div className="text-sm text-foreground">{desc}</div>
-      </div>
-      <Kbd
-        classNames={{
-          base: "min-w-8 shadow-custom!",
-          abbr: "text-xs text-default-400",
-          content: "w-full text-xs text-default-400",
-        }}
-        keys={kbdKey}
-      >
-        {keyStr}
+    <div className={cn(rowClass, "flex items-center justify-between gap-2")}>
+      <span className="text-sm">{desc}</span>
+      <Kbd>
+        {[...(kbdKey || []).map((key) => keySymbols[key] || key), keyStr].join(
+          " + ",
+        )}
       </Kbd>
     </div>
   );

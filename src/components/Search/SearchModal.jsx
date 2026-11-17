@@ -1,14 +1,20 @@
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon,
+} from "@/components/ui/input-group";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Kbd } from "@/components/ui/kbd";
+import { Separator } from "@/components/ui/separator";
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "@nanostores/react";
-import {
-  Divider,
-  Input,
-  Kbd,
-  Modal,
-  ModalContent,
-  Tab,
-  Tabs,
-} from "@heroui/react";
 import { Search as SearchIcon } from "lucide-react";
 import {
   feedSearchResults,
@@ -22,9 +28,11 @@ import SearchResults from "./SearchResults";
 import { useNavigate } from "react-router-dom";
 import { settingsState } from "@/stores/settingsStore";
 import { useTranslation } from "react-i18next";
+import { reportError } from "@/lib/errors.js";
 import { filter } from "@/stores/articlesStore.js";
 import { handleMarkStatus } from "@/handlers/articleHandlers";
 import { debounce } from "lodash";
+import { ScrollArea } from "@/components/ui/scroll-area.jsx";
 export default function SearchModal() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -36,11 +44,13 @@ export default function SearchModal() {
   const [searchType, setSearchType] = useState("articles");
   const [isComposing, setIsComposing] = useState(false);
   const inputRef = useRef(null);
-
+  const [scrollViewport, setScrollViewport] = useState(null);
+  const $searching = useStore(searching);
+  const results =
+    searchType === "articles" ? $searchResults : $feedSearchResults;
   useEffect(() => {
     let ignore = false;
     searching.set(true);
-
     const handleSearch = debounce(
       async () => {
         if (!keyword) {
@@ -48,7 +58,6 @@ export default function SearchModal() {
           feedSearchResults.set([]);
           return;
         }
-
         searchType === "articles"
           ? searchResults.set([])
           : feedSearchResults.set([]);
@@ -57,22 +66,23 @@ export default function SearchModal() {
             searchType === "articles"
               ? await search(keyword)
               : await searchFeeds(keyword);
-
           if (ignore) {
             return;
           }
-
           searchType === "articles"
             ? searchResults.set(res)
             : feedSearchResults.set(res);
           searching.set(false);
-        } catch {
-          console.error("搜索失败");
+        } catch (error) {
+          reportError(error, "search.modal");
           searching.set(false);
         }
       },
       500,
-      { leading: false, trailing: true },
+      {
+        leading: false,
+        trailing: true,
+      },
     );
     if (!isComposing) {
       handleSearch();
@@ -106,117 +116,88 @@ export default function SearchModal() {
       setSearchType("articles");
     }
   }, [isOpen, searchType]);
-
   return (
-    <Modal
-      isOpen={isOpen}
-      hideCloseButton
-      onOpenChange={(open) => searchDialogOpen.set(open)}
-      backdrop="transparent"
-      disableAnimation
-      placement="center"
-      size="2xl"
-      classNames={{
-        base: "m-2 max-h-[80vh] h-[440px] bg-content2/80 backdrop-blur-lg shadow-large",
-      }}
-    >
-      <ModalContent>
-        <div className="flex flex-col">
-          <Input
-            ref={inputRef}
-            autoFocus
-            placeholder={
-              searchType === "articles"
-                ? t("search.searchArticlesPlaceholder")
-                : t("search.searchFeedsPlaceholder")
-            }
-            size="lg"
-            value={keyword}
-            radius="none"
-            classNames={{
-              mainWrapper: "border-b",
-              inputWrapper:
-                "h-14 shadow-none bg-transparent data-[hover=true]:bg-transparent group-data-[focus=true]:bg-transparent group-data-[focus-visible=true]:ring-0 group-data-[focus-visible=true]:ring-transparent group-data-[focus-visible=true]:ring-offset-0 group-data-[focus-visible=true]:ring-offset-transparent",
-            }}
-            startContent={<SearchIcon className="size-6 text-default-400" />}
-            endContent={
-              <Kbd
-                classNames={{
-                  base: "shadow-custom!",
-                  content: "font-mono text-xs text-default-400",
-                }}
-              >
-                ESC
-              </Kbd>
-            }
-            onValueChange={(value) => setKeyword(value)}
-            onCompositionStart={() => setIsComposing(true)}
-            onCompositionEnd={() => setIsComposing(false)}
-          />
-        </div>
-        <SearchResults
-          results={
-            searchType === "articles" ? $searchResults : $feedSearchResults
-          }
-          keyword={keyword}
-          onSelect={handleSelect}
-          type={searchType}
-          isComposing={isComposing}
-        />
-        <div className="p-1.5 border-t flex items-center justify-between">
-          <Tabs
-            selectedKey={searchType}
-            onSelectionChange={(key) => {
-              setSearchType(key);
-              if (inputRef.current) {
-                inputRef.current.focus();
+    <Dialog open={isOpen} onOpenChange={(open) => searchDialogOpen.set(open)}>
+      <DialogContent
+        showCloseButton={false}
+        className="w-[700px] max-w-[90vw] h-[500px] max-h-[85vh] bg-popover/90 backdrop-blur-lg border shadow-2xl p-0 flex flex-col gap-0 overflow-hidden sm:max-w-[700px]"
+      >
+        <DialogTitle className="sr-only">{t("common.search")}</DialogTitle>
+        <DialogHeader className="p-2 border-b">
+          <InputGroup className="bg-transparent shadow-none ring-0 ring-transparent has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0">
+            <InputGroupAddon>
+              <SearchIcon className="size-5 text-muted-foreground opacity-60 stroke-3" />
+            </InputGroupAddon>
+            <InputGroupInput
+              ref={inputRef}
+              autoFocus
+              className="text-lg"
+              aria-label={t("common.search")}
+              placeholder={
+                searchType === "articles"
+                  ? t("search.searchArticlesPlaceholder")
+                  : t("search.searchFeedsPlaceholder")
               }
-            }}
-            radius="md"
-            keyboardActivation="manual"
-            classNames={{
-              tabList: "bg-default/40 backdrop-blur-md gap-0",
-              tab: "h-auto px-2",
-              cursor: "w-full bg-default-400/90 shadow-none dark:bg-primary",
-              tabContent:
-                "text-xs text-default-500 font-semibold group-data-[selected=true]:text-default-50 dark:group-data-[selected=true]:text-foreground",
-            }}
-          >
-            <Tab key="articles" title={t("common.article")} />
-            <Tab key="feeds" title={t("common.feed")} />
-          </Tabs>
-          <div className="flex items-center gap-1 px-1">
-            <Kbd
-              keys="up"
-              classNames={{
-                base: "shadow-custom!",
-                abbr: "text-xs text-default-500",
-              }}
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+              onCompositionStart={() => setIsComposing(true)}
+              onCompositionEnd={() => setIsComposing(false)}
             />
-            <Kbd
-              keys="down"
-              classNames={{
-                base: "shadow-custom!",
-                abbr: "text-xs text-default-500",
+          </InputGroup>
+        </DialogHeader>
+        <ScrollArea
+          className="min-h-0 flex-1"
+          viewportRef={setScrollViewport}
+          viewportClassName="overscroll-contain"
+          contentClassName={
+            !keyword || $searching || !results.length ? "h-full" : undefined
+          }
+        >
+          <SearchResults
+            results={
+              searchType === "articles" ? $searchResults : $feedSearchResults
+            }
+            keyword={keyword}
+            onSelect={handleSelect}
+            type={searchType}
+            isComposing={isComposing}
+            inputRef={inputRef}
+            scrollViewport={scrollViewport}
+          />
+        </ScrollArea>
+        <DialogFooter className="p-0 m-0">
+          <div className="w-full p-2 border-t bg-background flex flex-wrap items-center justify-between gap-2">
+            <Tabs
+              value={searchType}
+              onValueChange={(key) => {
+                setSearchType(key);
+                if (inputRef.current) {
+                  inputRef.current.focus();
+                }
               }}
-            />
-            <span className="text-xs text-default-500 font-semibold">
-              {t("search.toggleItem")}
-            </span>
-            <Divider orientation="vertical" className="h-5 mx-1" />
-            <Kbd
-              keys="enter"
-              classNames={{
-                base: "shadow-custom!",
-                abbr: "text-xs text-default-500",
-              }}
-            />
-            <span className="text-xs text-default-500 font-semibold">
-              {t("search.open")}
-            </span>
+            >
+              <TabsList variant="pill" aria-label="searchType">
+                <TabsTrigger value="articles">
+                  {t("common.article")}
+                </TabsTrigger>
+                <TabsTrigger value="feeds">{t("common.feed")}</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="flex flex-wrap items-center gap-1 px-1">
+              <Kbd>{"\u2191"}</Kbd>
+              <Kbd>{"\u2193"}</Kbd>
+              <span className="text-xs text-muted-foreground font-semibold">
+                {t("search.toggleItem")}
+              </span>
+              <Separator orientation="vertical" className="h-5 mx-1" />
+              <Kbd>{"\u21B5"}</Kbd>
+              <span className="text-xs text-muted-foreground font-semibold">
+                {t("search.open")}
+              </span>
+            </div>
           </div>
-        </div>
-      </ModalContent>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

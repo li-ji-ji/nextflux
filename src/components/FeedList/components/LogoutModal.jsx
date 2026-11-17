@@ -1,8 +1,10 @@
-import AlertDialog from "@/components/ui/AlertDialog.jsx";
+import CustomAlertDialog from "@/components/ui/CustomAlertDialog.jsx";
 import { useTranslation } from "react-i18next";
 import { logoutModalOpen } from "@/stores/modalStore.js";
 import { useStore } from "@nanostores/react";
 import { logout } from "@/stores/authStore.js";
+import { reportError } from "@/lib/errors.js";
+import { toast } from "sonner";
 
 export default function LogoutModal() {
   const { t } = useTranslation();
@@ -11,11 +13,12 @@ export default function LogoutModal() {
     try {
       await logout();
     } catch (error) {
-      console.error("退出登录失败:", error);
+      toast.error(t("auth.logoutFailed"));
+      throw reportError(error, "auth.logoutModal");
     }
   };
   return (
-    <AlertDialog
+    <CustomAlertDialog
       title={t("sidebar.profile.logout")}
       content={t("sidebar.profile.logoutConfirmDescription")}
       isOpen={$logoutModalOpen}

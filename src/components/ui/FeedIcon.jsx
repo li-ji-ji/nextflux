@@ -1,17 +1,17 @@
 import { useState, useEffect, useMemo } from "react";
-import { Image } from "@heroui/react";
 import { Rss } from "lucide-react";
 import { settingsState } from "@/stores/settingsStore";
 import { useStore } from "@nanostores/react";
 import { cn } from "@/lib/utils";
-import { getFeedIcon, setFeedIcon } from "@/db/storage";
-import minifluxAPI from "@/api/miniflux";
+import { iconService } from "@/services/iconService.js";
+import { reportError } from "@/lib/errors.js";
 
 const FeedIcon = ({ feedId, url = null }) => {
   const { feedIconShape, useGrayIcon } = useStore(settingsState);
   const [error, setError] = useState(false);
   const [isBlurry, setIsBlurry] = useState(false);
   const [iconData, setIconData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // 添加 Google Favicon 相关逻辑
   const getDomain = useMemo(() => {
@@ -28,29 +28,23 @@ const FeedIcon = ({ feedId, url = null }) => {
   }, [getDomain]);
 
   useEffect(() => {
+    let cancelled = false;
+    setError(false);
+    setIsBlurry(false);
+    setIsLoading(true);
+    setIconData(null);
     const loadIcon = async () => {
       try {
         if (feedId) {
-          let icon = await getFeedIcon(feedId);
-
-          if (!icon || Date.now() - icon.updatedAt > 7 * 24 * 60 * 60 * 1000) {
-            const newIcon = await minifluxAPI.getIconByFeedId(feedId);
-            if (newIcon) {
-              await setFeedIcon({
-                feedId,
-                mime_type: newIcon.mime_type,
-                data: newIcon.data,
-              });
-              icon = newIcon;
-            }
-          }
+          const icon = await iconService.load(feedId);
+          if (cancelled) return;
 
           if (icon) {
             setIconData(`data:${icon.data}`);
             return;
           }
         }
-        
+
         // 如果没有 feedId 或获取失败，尝试使用 URL 方式
         if (url) {
           setIconData(faviconUrl);
@@ -59,12 +53,16 @@ const FeedIcon = ({ feedId, url = null }) => {
 
         setError(true);
       } catch (err) {
-        console.error("加载订阅源图标失败:", err);
+        if (cancelled) return;
+        reportError(err, "feedIcon.load");
         setError(true);
       }
     };
 
     loadIcon();
+    return () => {
+      cancelled = true;
+    };
   }, [feedId, url, faviconUrl]);
 
   // 处理图片加载错误
@@ -86,7 +84,7 @@ const FeedIcon = ({ feedId, url = null }) => {
     return (
       <span
         className={cn(
-          "flex items-center shrink-0 justify-center w-5 h-5 p-0.5 bg-white transition-opacity duration-300 ease-in-out animate-in fade-in-0 shadow-small",
+          "flex items-center shrink-0 justify-center w-5 h-5 p-0.5 bg-white transition-opacity duration-300 ease-in-out animate-in fade-in shadow-custom",
           feedIconShape === "circle" ? "rounded-full" : "rounded-sm",
         )}
       >
@@ -96,19 +94,18 @@ const FeedIcon = ({ feedId, url = null }) => {
   }
 
   return (
-    <Image
+    <img
       alt="Feed icon"
       src={iconData}
-      className="size-5 p-0.5 bg-white shadow-small"
-      classNames={{
-        wrapper: "shrink-0",
-        img: cn(
-          useGrayIcon ? "grayscale" : "",
-          feedIconShape === "circle" ? "rounded-full" : "rounded-sm",
-        ),
-      }}
+      className={cn(
+        "size-5 p-0.5 bg-white shadow-custom transition-opacity duration-300 ease-in-out animate-in fade-in",
+        useGrayIcon ? "grayscale" : "",
+        feedIconShape === "circle" ? "rounded-full" : "rounded-sm",
+        isLoading && "opacity-0",
+      )}
       onError={handleError}
       onLoad={(e) => {
+        setIsLoading(false);
         handleLoad(e);
       }}
     />

@@ -1,5 +1,6 @@
 import { persistentAtom } from "@nanostores/persistent";
 import { computed } from "nanostores";
+import { syncBrowserTheme } from "@/lib/browserTheme";
 
 const defaultValue = {
   themeMode: "system",
@@ -10,12 +11,32 @@ const defaultValue = {
 // 主题配置
 export const themes = {
   light: [
-    { id: "light", name: "白色", color: "#ffffff" },
-    { id: "stone", name: "石灰", color: "#F3F1ED" },
+    {
+      id: "light",
+      name: "白色",
+      color: "#ffffff",
+      accent: "oklch(0.488 0.243 264.376)",
+    },
+    {
+      id: "stone",
+      name: "石灰",
+      color: "#F3F1ED",
+      accent: "rgb(216, 94.007, 74.996)",
+    },
   ],
   dark: [
-    { id: "dark", name: "黑色", color: "#1E1E1E" },
-    { id: "black-dark", name: "纯黑", color: "#000000" },
+    {
+      id: "dark",
+      name: "黑色",
+      color: "#1E1E1E",
+      accent: "oklch(0.424 0.199 265.638)",
+    },
+    {
+      id: "nord-dark",
+      name: "深蓝",
+      color: "#4c566a",
+      accent: "rgb(135, 192, 208)",
+    },
   ],
 };
 
@@ -23,7 +44,14 @@ export const themeState = persistentAtom("theme", defaultValue, {
   encode: JSON.stringify,
   decode: (str) => {
     const storedValue = JSON.parse(str);
-    return { ...defaultValue, ...storedValue };
+    const value = { ...defaultValue, ...storedValue };
+    for (const mode of ["light", "dark"]) {
+      const key = `${mode}Theme`;
+      if (!themes[mode].some((theme) => theme.id === value[key])) {
+        value[key] = defaultValue[key];
+      }
+    }
+    return value;
   },
 });
 
@@ -31,7 +59,10 @@ export const themeState = persistentAtom("theme", defaultValue, {
 export function setTheme(mode, themeId = null) {
   const root = window.document.documentElement;
   const allThemes = [...themes.light, ...themes.dark].map((t) => t.id);
+
+  // 移除所有主题相关的 class 和 data-theme
   root.classList.remove(...allThemes);
+  root.removeAttribute("data-theme");
 
   if (mode === "system") {
     const systemMode = window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -41,14 +72,20 @@ export function setTheme(mode, themeId = null) {
       systemMode === "dark"
         ? themeState.get().darkTheme
         : themeState.get().lightTheme;
-    root.classList.add(themeToUse);
+    // 设置 color-scheme class
+    root.classList.add(systemMode);
+    // 设置 data-theme
+    root.setAttribute("data-theme", themeToUse);
   } else {
     const newTheme =
       themeId ||
       (mode === "dark"
         ? themeState.get().darkTheme
         : themeState.get().lightTheme);
-    root.classList.add(newTheme);
+    // 设置 color-scheme class (light 或 dark)
+    root.classList.add(mode);
+    // 设置 data-theme
+    root.setAttribute("data-theme", newTheme);
     if (mode === "dark") {
       themeState.set({ ...themeState.get(), darkTheme: newTheme });
     } else {
@@ -57,6 +94,7 @@ export function setTheme(mode, themeId = null) {
   }
 
   themeState.set({ ...themeState.get(), themeMode: mode });
+  syncBrowserTheme();
 }
 
 // 初始化主题
@@ -76,7 +114,10 @@ export function initTheme() {
       const root = window.document.documentElement;
       const allThemes = [...themes.light, ...themes.dark].map((t) => t.id);
       root.classList.remove(...allThemes);
-      root.classList.add(themeToUse);
+      root.removeAttribute("data-theme");
+      root.classList.add(systemMode);
+      root.setAttribute("data-theme", themeToUse);
+      syncBrowserTheme();
     }
   });
 }

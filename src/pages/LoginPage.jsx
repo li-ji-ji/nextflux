@@ -1,37 +1,37 @@
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon,
+} from "@/components/ui/input-group";
+import { Form } from "@base-ui/react/form";
+import { ArrowUpRight } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { authState, login } from "@/stores/authStore";
-import { Button, Form, Input, Link, Divider } from "@heroui/react";
+import { authState, sessionAccount, login } from "@/stores/authStore";
+import { isAuthenticated } from "@/domain/auth/accounts.js";
 import { Eye, EyeClosed } from "lucide-react";
 import { toast } from "sonner";
-import { useStore } from "@nanostores/react";
 import { useTranslation } from "react-i18next";
-
 export default function LoginPage() {
   const navigate = useNavigate();
-  const $auth = useStore(authState);
   const { t } = useTranslation();
-  const [authType, setAuthType] = useState("basic");
-  const [serverUrl, setServerUrl] = useState("");
-  const [username, setUsername] = useState("");
+  const [authType, setAuthType] = useState(sessionAccount.authType || "basic");
+  const [serverUrl, setServerUrl] = useState(sessionAccount.serverUrl || "");
+  const [username, setUsername] = useState(sessionAccount.username || "");
   const [password, setPassword] = useState("");
   const [token, setToken] = useState("");
   const [isVisible, setIsVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-
   useEffect(() => {
-    if ($auth.serverUrl && $auth.username && $auth.password) {
-      navigate("/");
+    if (isAuthenticated(authState.get()) && isAuthenticated(sessionAccount)) {
+      navigate("/", { replace: true });
     }
-  }, [$auth.serverUrl, $auth.username, $auth.password, navigate]);
-
-  useEffect(() => {
-    if (!localStorage.getItem("refreshed")) {
-      window.location.reload();
-      localStorage.setItem("refreshed", "true");
-    }
-  }, []);
-
+  }, [navigate]);
   useEffect(() => {
     const url = new URL(window.location.href);
     const {
@@ -40,10 +40,8 @@ export default function LoginPage() {
       username: urlUsername,
       password: urlPassword,
     } = Object.fromEntries(url.searchParams);
-
     if (urlServerUrl) {
       setServerUrl(urlServerUrl);
-
       if (urlUsername && urlPassword) {
         setAuthType("basic");
         setUsername(urlUsername);
@@ -54,11 +52,9 @@ export default function LoginPage() {
       }
     }
   }, [navigate]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       await login(
         serverUrl,
@@ -66,140 +62,146 @@ export default function LoginPage() {
         authType === "basic" ? password : "",
         authType === "token" ? token : "",
       );
-      navigate("/");
     } catch (err) {
-      console.log(err.message);
       toast.error(err.message);
     } finally {
       setLoading(false);
     }
   };
-
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-sm flex flex-col gap-6 p-6 bg-content1 rounded-lg shadow-custom">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="w-full max-w-sm flex flex-col gap-6 p-6 bg-transparent">
         <h1 className="text-2xl font-semibold tracking-tight">
           {t("auth.login")}
         </h1>
 
-        <Form
-          className="flex flex-col gap-4"
-          validationBehavior="native"
-          onSubmit={handleSubmit}
-        >
-          <Input
-            isRequired
-            labelPlacement="outside"
-            label={t("auth.serverUrl")}
-            name="serverUrl"
-            placeholder={t("auth.serverUrlPlaceholder")}
-            type="text"
-            variant="faded"
-            value={serverUrl}
-            onChange={(e) => setServerUrl(e.target.value)}
-            classNames={{ helperWrapper: "hidden!" }}
-          />
+        <Form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          <Field>
+            <FieldLabel htmlFor="serverUrl">{t("auth.serverUrl")}</FieldLabel>
+            <Input
+              placeholder={t("auth.serverUrlPlaceholder")}
+              type="text"
+              value={serverUrl}
+              onChange={(e) => setServerUrl(e.target.value)}
+              className="w-full"
+              required={true}
+              name="serverUrl"
+              id="serverUrl"
+            />
+            <FieldError />
+          </Field>
 
           {authType === "basic" ? (
             <>
-              <Input
-                isRequired
-                labelPlacement="outside"
-                label={t("auth.username")}
-                name="username"
-                placeholder={t("auth.usernamePlaceholder")}
-                type="text"
-                variant="faded"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                classNames={{ helperWrapper: "hidden!" }}
-              />
-              <Input
-                isRequired
-                labelPlacement="outside"
-                endContent={
-                  <button
-                    type="button"
-                    onClick={() => setIsVisible(!isVisible)}
-                  >
-                    {isVisible ? (
-                      <EyeClosed className="text-xl text-default-400 pointer-events-none shrink-0" />
-                    ) : (
-                      <Eye className="text-xl text-default-400 pointer-events-none shrink-0" />
-                    )}
-                  </button>
-                }
-                label={t("auth.password")}
-                name="password"
-                placeholder={t("auth.passwordPlaceholder")}
-                type={isVisible ? "text" : "password"}
-                variant="faded"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                classNames={{ helperWrapper: "hidden!" }}
-              />
+              <Field>
+                <FieldLabel htmlFor="username">{t("auth.username")}</FieldLabel>
+                <Input
+                  placeholder={t("auth.usernamePlaceholder")}
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full"
+                  required={true}
+                  name="username"
+                  id="username"
+                />
+                <FieldError />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="password">{t("auth.password")}</FieldLabel>
+                <InputGroup>
+                  <InputGroupInput
+                    placeholder={t("auth.passwordPlaceholder")}
+                    type={isVisible ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full"
+                    required={true}
+                    name="password"
+                    id="password"
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <button
+                      type="button"
+                      onClick={() => setIsVisible(!isVisible)}
+                      aria-label="Toggle password visibility"
+                    >
+                      {isVisible ? (
+                        <EyeClosed className="text-xl text-muted-foreground pointer-events-none shrink-0" />
+                      ) : (
+                        <Eye className="text-xl text-muted-foreground pointer-events-none shrink-0" />
+                      )}
+                    </button>
+                  </InputGroupAddon>
+                </InputGroup>
+                <FieldError />
+              </Field>
             </>
           ) : (
-            <Input
-              isRequired
-              labelPlacement="outside"
-              label={t("auth.token")}
-              name="token"
-              placeholder={t("auth.tokenPlaceholder")}
-              type="text"
-              variant="faded"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              classNames={{ helperWrapper: "hidden!" }}
-            />
+            <Field>
+              <FieldLabel htmlFor="token">{t("auth.token")}</FieldLabel>
+              <Input
+                placeholder={t("auth.tokenPlaceholder")}
+                type="text"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                className="w-full"
+                required={true}
+                name="token"
+                id="token"
+              />
+              <FieldError />
+            </Field>
           )}
 
           <div>
-            <span className="text-sm text-default-500">
-              {t("auth.needMoreInfo")}
-            </span>
-            <Link href="https://miniflux.app" size="sm">
+            <span className="text-sm">{t("auth.needMoreInfo")}</span>
+            <a
+              href="https://miniflux.app"
+              className="inline-flex items-center gap-1 text-sm"
+            >
               {t("auth.visitMiniflux")}
-            </Link>
+              <ArrowUpRight className="size-3.5" />
+            </a>
           </div>
           <Button
-            className="w-full bg-primary bg-linear-to-b from-white/15 to-transparent border-primary border shadow-custom-button"
-            color="primary"
             type="submit"
-            isLoading={loading}
+            disabled={loading}
+            aria-busy={loading}
+            className="w-full"
           >
+            {loading && <Spinner />}
             {t("common.login")}
           </Button>
         </Form>
         <div className="relative flex items-center justify-center w-full -my-3">
-          <Divider className="absolute w-full" />
-          <span className="text-sm text-default-500 bg-content1 px-2 z-10">
+          <Separator className="absolute w-full" />
+          <span className="text-sm bg-background px-2 z-10">
             {t("auth.or")}
           </span>
         </div>
         {authType === "token" ? (
           <Button
-            fullWidth
-            variant="bordered"
-            className="text-default-500"
-            onPress={() => {
+            variant="secondary"
+            onClick={() => {
               setAuthType("basic");
               setUsername("");
               setPassword("");
               setToken("");
             }}
+            className="w-full"
           >
             {t("auth.basicAuth")}
           </Button>
         ) : (
           <Button
-            fullWidth
-            variant="bordered"
-            className="text-default-500"
-            onPress={() => {
+            variant="secondary"
+            onClick={() => {
               setAuthType("token");
               setToken("");
             }}
+            className="w-full"
           >
             {t("auth.tokenAuth")}
           </Button>

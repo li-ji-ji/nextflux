@@ -1,7 +1,6 @@
-import { Chip } from "@heroui/react";
+import { Badge } from "@/components/ui/badge";
 import ArticleImage from "./ArticleImage";
 import { useTranslation } from "react-i18next";
-
 export default function Attachments({ article }) {
   const { t } = useTranslation();
 
@@ -9,33 +8,24 @@ export default function Attachments({ article }) {
   const imgEnclosures = article?.enclosures?.filter((enclosure) =>
     enclosure.mime_type?.startsWith("image/"),
   );
-  // 检查是否有视频附件
-  const videoEnclosures = article?.enclosures?.filter((enclosure) =>
-    enclosure.mime_type?.startsWith("video/"),
-  );
 
   // 定义黑名单域名列表
-  const blacklist = ["youtube.com", "youtu.be", "reddit.com", "glass.photo"];
+  const blacklist = ["youtube.com", "youtu.be", "glass.photo"];
 
   // 检查文章的URL是否在黑名单中
   const isBlacklisted = blacklist.some((domain) =>
     article?.feed?.url?.includes(domain),
   );
-
   if (isBlacklisted || !article?.enclosures) {
     return null;
   }
-
-  if (imgEnclosures?.length === 0 && videoEnclosures?.length === 0) {
+  if (imgEnclosures?.length === 0) {
     return null;
   }
-
   return (
-    <div className="flex flex-col gap-2 rounded-xl shadow-medium bg-content2 p-5 mt-2">
+    <div className="flex flex-col gap-2 rounded-xl shadow-custom bg-background p-5 mt-2">
       <div>
-        <Chip color="primary" variant="flat" size="sm">
-          {t("articleView.attachments")}
-        </Chip>
+        <Badge variant="secondary">{t("articleView.attachments")}</Badge>
       </div>
       {imgEnclosures.map((enclosure) => (
         <ArticleImage

@@ -1,34 +1,48 @@
 import "./i18n";
+import PwaUpdates from "@/components/Pwa/PwaUpdates";
+import SessionNotices from "@/components/SessionNotices";
 import { initTheme } from "@/stores/themeStore";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { router } from "@/routes/index.jsx";
-import { HeroUIProvider, Spinner } from "@heroui/react";
 import { RouterProvider } from "react-router";
-import SplashScreen from "@/components/SplashScreen";
 import { Toaster } from "sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  Info,
+  CircleCheck,
+  TriangleAlert,
+  CircleX,
+  Loader2,
+} from "lucide-react";
 
 // 初始化主题
 initTheme();
 
 createRoot(document.getElementById("root")).render(
-  <HeroUIProvider>
-    <SplashScreen />
+  <TooltipProvider>
     <Toaster
-      theme="system"
       icons={{
-        loading: (
-          <div className="flex">
-            <Spinner variant="simple" classNames={{ wrapper: "size-4" }} />
-          </div>
-        ),
+        loading: <Loader2 className="size-4! animate-spin! text-primary!" />,
+        success: <CircleCheck className="size-4! text-green-500" />,
+        info: <Info className="size-4! text-blue-500" />,
+        warning: <TriangleAlert className="size-4! text-yellow-500" />,
+        error: <CircleX className="size-4! text-red-500" />,
       }}
       toastOptions={{
         classNames: {
-          toast: "rounded-lg! bg-content2! shadow-custom! p-4!",
+          toast: "rounded-2xl! bg-popover! shadow-custom-md! p-4! border-none!",
+          title: "text-foreground!",
+          description: "text-muted-foreground!",
+          actionButton:
+            "bg-primary! text-primary-foreground! hover:bg-primary/80! focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover transition-colors",
+          cancelButton:
+            "bg-secondary! text-secondary-foreground! hover:bg-muted! focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover transition-colors",
         },
       }}
     />
+    <PwaUpdates />
+    <SessionNotices />
     <RouterProvider
       router={router}
       future={{
@@ -40,5 +54,5 @@ createRoot(document.getElementById("root")).render(
         v7_skipActionErrorRevalidation: true,
       }}
     />
-  </HeroUIProvider>,
+  </TooltipProvider>,
 );

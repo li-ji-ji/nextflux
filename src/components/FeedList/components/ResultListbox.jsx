@@ -1,61 +1,61 @@
-import { Listbox, ListboxItem } from "@heroui/react";
-import { cn } from "@/lib/utils";
-import { Image } from "@heroui/react";
+import { Separator } from "@/components/ui/separator";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import FeedIcon from "@/components/ui/FeedIcon";
+import { Image } from "@/components/ui/Image.jsx";
+import { ScrollArea } from "@/components/ui/scroll-area.jsx";
+
 export default function ResultListbox({ results, searchType, handleSelect }) {
-  const ListboxWrapper = ({ children }) => (
-    <div
-      className={cn(
-        "w-full border-small bg-content2 h-56 overflow-y-auto p-1 rounded-small shadow-custom-inner",
-        results.length === 0 ? "opacity-0" : "opacity-100",
-      )}
-    >
-      {children}
-    </div>
-  );
+  if (!results.length) return null;
   return (
-    <ListboxWrapper>
-      <Listbox
-        disallowEmptySelection
-        selectionMode="single"
-        variant="flat"
-        aria-label="results"
-        items={results}
-        hideEmptyContent
-        onSelectionChange={(keys) => {
-          handleSelect(keys);
-        }}
-        itemClasses={{
-          wrapper: "overflow-hidden",
-          title: "max-w-full",
-          description: "max-w-full",
-        }}
+    <>
+      <Separator className="my-1" />
+      <ScrollArea
+        className="min-w-0 w-full rounded-xl bg-secondary/60"
+        viewportClassName="max-h-60 overscroll-contain"
       >
-        {(item) => (
-          <ListboxItem
-            key={item.url}
-            textValue={item.url}
-            description={item.url}
-            startContent={
-              searchType === "podcast" ? (
+        <ToggleGroup
+          orientation="vertical"
+          spacing={1}
+          aria-label="results"
+          className="min-w-0 w-full items-stretch p-1"
+          onValueChange={(values) => {
+            if (values.length) handleSelect(values);
+          }}
+        >
+          {results.map((item) => (
+            <ToggleGroupItem
+              key={item.url}
+              value={item.url}
+              aria-label={item.title || item.url}
+              className="h-auto min-w-0 w-full justify-start py-2"
+            >
+              {searchType === "podcast" ? (
                 <Image
                   src={item.icon_url}
                   alt={item.title}
-                  classNames={{
-                    wrapper:
-                      "size-8 rounded-sm shadow-small shrink-0 overflow-hidden",
-                    img: "size-8 rounded-none",
-                  }}
+                  className="size-8 shrink-0 rounded-sm object-cover shadow-custom"
                 />
               ) : (
                 <FeedIcon feedId={null} url={item.url} />
-              )
-            }
-          >
-            {item.title || item.url}
-          </ListboxItem>
-        )}
-      </Listbox>
-    </ListboxWrapper>
+              )}
+              <span className="flex min-w-0 flex-1 flex-col text-left">
+                <span
+                  className="w-full truncate"
+                  title={item.title || item.url}
+                >
+                  {item.title || item.url}
+                </span>
+                <span
+                  className="w-full truncate text-xs text-muted-foreground"
+                  title={item.url}
+                >
+                  {item.url}
+                </span>
+              </span>
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      </ScrollArea>
+    </>
   );
 }

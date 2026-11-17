@@ -1,100 +1,158 @@
 import {
-    Button,
-    Dropdown,
-    DropdownItem,
-    DropdownMenu,
-    DropdownTrigger,
-    Divider,
-  } from "@heroui/react";
-  import {
-    EllipsisVertical,
-    FilePen,
-    FolderPen,
-    Trash2,
-    RefreshCw,
-  } from "lucide-react";
-  import { useParams } from "react-router-dom";
-  import {
-    editFeedModalOpen,
-    renameModalOpen,
-    unsubscribeModalOpen,
-    currentFeedId,
-  } from "@/stores/modalStore.js";
-  import { useTranslation } from "react-i18next";
-  import { handleRefresh } from "@/handlers/feedHandlers";
-  
-  export default function MenuButton() {
-    const { feedId, categoryId } = useParams();
-    const { t } = useTranslation();
-  
-    return (
-      <>
-        <Dropdown>
-          <DropdownTrigger>
-            <Button
-              size="sm"
-              radius="full"
-              variant="light"
-              isIconOnly
-              isDisabled={!feedId && !categoryId}
-            >
-              <EllipsisVertical className="size-4 text-default-500" />
-            </Button>
-          </DropdownTrigger>
-          {feedId && (
-            <DropdownMenu aria-label="Feed Actions" variant="flat">
-              <DropdownItem
-                key="refresh"
-                onPress={() => handleRefresh(feedId)}
-                startContent={<RefreshCw className="size-4 text-default-500" />}
-              >
-                {t("articleList.refreshFeed")}
-              </DropdownItem>
-              <DropdownItem
-                key="edit"
-                onPress={() => {
-                  currentFeedId.set(feedId);
-                  editFeedModalOpen.set(true);
-                }}
-                startContent={<FilePen className="size-4 text-default-500" />}
-              >
-                {t("articleList.editFeed")}
-              </DropdownItem>
-              <DropdownItem
-            isDisabled
-            classNames={{ base: "py-1.5" }}
-            textValue="divider"
+  MorphDropdownMenu,
+  MorphDropdownMenuTrigger,
+  MorphDropdownMenuContent,
+  MorphDropdownMenuGroup,
+  MorphDropdownMenuItem,
+} from "@/components/ui/morph-dropdown-menu";
+import { Button } from "@/components/ui/button";
+import {
+  EllipsisVertical,
+  FilePen,
+  FolderPen,
+  Trash2,
+  RefreshCw,
+} from "lucide-react";
+import { useParams } from "react-router-dom";
+import {
+  editFeedModalOpen,
+  renameModalOpen,
+  unsubscribeModalOpen,
+  currentFeedId,
+} from "@/stores/modalStore.js";
+import { useTranslation } from "react-i18next";
+import { handleRefresh } from "@/handlers/feedHandlers";
+export default function MenuButton() {
+  const { feedId, categoryId } = useParams();
+  const { t } = useTranslation();
+  const hasFeedMenu = !!feedId;
+  const hasCategoryMenu = !!categoryId && !feedId;
+  const isDisabled = !feedId && !categoryId;
+  return (
+    <MorphDropdownMenu>
+      <MorphDropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            disabled={isDisabled}
+            size="icon-sm"
+            className="rounded-full"
           >
-            <Divider />
-          </DropdownItem>
-              <DropdownItem
-                key="delete"
-                className="text-danger"
-                color="danger"
-                variant="flat"
-                onPress={() => {
-                  currentFeedId.set(feedId);
-                  unsubscribeModalOpen.set(true);
-                }}
-                startContent={<Trash2 className="size-4" />}
+            <EllipsisVertical className="size-4 text-muted-foreground" />
+          </Button>
+        }
+      />
+
+      {(hasFeedMenu || hasCategoryMenu) && (
+        <MorphDropdownMenuContent align="end">
+          <MorphDropdownMenuGroup
+            aria-label={hasFeedMenu ? "Feed Actions" : "Category Actions"}
+          >
+            {hasFeedMenu && (
+              <>
+                <MorphDropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() =>
+                    ((key) => {
+                      if (hasFeedMenu) {
+                        if (key === "refresh") handleRefresh(feedId);
+                        if (key === "edit") {
+                          currentFeedId.set(feedId);
+                          editFeedModalOpen.set(true);
+                        }
+                        if (key === "unsubscribe") {
+                          currentFeedId.set(feedId);
+                          unsubscribeModalOpen.set(true);
+                        }
+                      }
+                      if (hasCategoryMenu) {
+                        if (key === "rename") renameModalOpen.set(true);
+                      }
+                    })("refresh")
+                  }
+                >
+                  <RefreshCw className="size-4 text-muted-foreground" />
+                  <span>{t("articleList.refreshFeed")}</span>
+                </MorphDropdownMenuItem>
+                <MorphDropdownMenuItem
+                  onClick={() =>
+                    ((key) => {
+                      if (hasFeedMenu) {
+                        if (key === "refresh") handleRefresh(feedId);
+                        if (key === "edit") {
+                          currentFeedId.set(feedId);
+                          editFeedModalOpen.set(true);
+                        }
+                        if (key === "unsubscribe") {
+                          currentFeedId.set(feedId);
+                          unsubscribeModalOpen.set(true);
+                        }
+                      }
+                      if (hasCategoryMenu) {
+                        if (key === "rename") renameModalOpen.set(true);
+                      }
+                    })("edit")
+                  }
+                >
+                  <FilePen className="size-4 text-muted-foreground" />
+                  <span>{t("articleList.editFeed")}</span>
+                </MorphDropdownMenuItem>
+
+                <MorphDropdownMenuItem
+                  variant="destructive"
+                  onClick={() =>
+                    ((key) => {
+                      if (hasFeedMenu) {
+                        if (key === "refresh") handleRefresh(feedId);
+                        if (key === "edit") {
+                          currentFeedId.set(feedId);
+                          editFeedModalOpen.set(true);
+                        }
+                        if (key === "unsubscribe") {
+                          currentFeedId.set(feedId);
+                          unsubscribeModalOpen.set(true);
+                        }
+                      }
+                      if (hasCategoryMenu) {
+                        if (key === "rename") renameModalOpen.set(true);
+                      }
+                    })("unsubscribe")
+                  }
+                >
+                  <Trash2 />
+                  <span>{t("articleList.unsubscribe")}</span>
+                </MorphDropdownMenuItem>
+              </>
+            )}
+
+            {hasCategoryMenu && (
+              <MorphDropdownMenuItem
+                onClick={() =>
+                  ((key) => {
+                    if (hasFeedMenu) {
+                      if (key === "refresh") handleRefresh(feedId);
+                      if (key === "edit") {
+                        currentFeedId.set(feedId);
+                        editFeedModalOpen.set(true);
+                      }
+                      if (key === "unsubscribe") {
+                        currentFeedId.set(feedId);
+                        unsubscribeModalOpen.set(true);
+                      }
+                    }
+                    if (hasCategoryMenu) {
+                      if (key === "rename") renameModalOpen.set(true);
+                    }
+                  })("rename")
+                }
               >
-                {t("articleList.unsubscribe")}
-              </DropdownItem>
-            </DropdownMenu>
-          )}
-          {categoryId && (
-            <DropdownMenu aria-label="Category Actions" variant="flat">
-              <DropdownItem
-                key="rename"
-                onPress={() => renameModalOpen.set(true)}
-                startContent={<FolderPen className="size-4 text-default-500" />}
-              >
-                {t("articleList.renameCategory.title")}
-              </DropdownItem>
-            </DropdownMenu>
-          )}
-        </Dropdown>
-      </>
-    );
-  }
-  
+                <FolderPen className="size-4 text-muted-foreground" />
+                <span>{t("articleList.renameCategory.title")}</span>
+              </MorphDropdownMenuItem>
+            )}
+          </MorphDropdownMenuGroup>
+        </MorphDropdownMenuContent>
+      )}
+    </MorphDropdownMenu>
+  );
+}

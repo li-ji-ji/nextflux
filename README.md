@@ -3,11 +3,15 @@
 A modern RSS reader client for [Miniflux](https://github.com/miniflux/v2) built with React + Vite.
 
 ![preview](images/preview.png)
+![dark](images/dark.png)
+![settings](images/settings.png)
+![edit](images/edit.png)
 
 ## ✨ Features
 
 - 🚀 Fast and responsive UI built with HeroUI (Previously NextUI)
 - 🌐 Connect to your Miniflux server
+- 👥 Save multiple Miniflux accounts and switch between them with separate caches
 - 🔄 Automatic background sync with configurable intervals
 - 📱 Mobile-friendly with PWA support
 - 🌙 Light/Dark mode with multiple theme options
@@ -16,92 +20,15 @@ A modern RSS reader client for [Miniflux](https://github.com/miniflux/v2) built 
 - 🎯 Rich reading experience
     - Custom font settings
     - Image gallery with touch gestures support
-    - Podcast player with speed control and background playback support
-    - Video player with beautiful UI
     - Save article to 3rd party services
 - ⌨️ Keyboard shortcuts
 - 📊 Feed management
     - OPML import
+    - OPML export and settings backup/restore
     - Category organization
     - Feed hiding
     - Feed discovery and search
     - Advanced options for feed management
-
-## 📸 Screenshot Galleries
-
-<table>
-    <tr>
-        <td>Podcast
-        </td>
-        <td>YouTube
-        </td>
-    </tr>
-    <tr>
-        <td><img src=images/podcast.png width=600/></td>
-        <td><img src=images/youtube.png width=600/></td>
-    </tr>
-    <tr>
-        <td>Code Highlight
-        </td>
-        <td>Image Gallery
-        </td>
-    </tr>
-    <tr>
-        <td><img src=images/code.png width=600/></td>
-        <td><img src=images/images.png width=600/></td>
-    </tr>
-     <tr>
-        <td>Feed Discovery
-        </td>
-        <td>Settings
-        </td>
-    </tr>
-    <tr>
-        <td><img src=images/feed.png width=600/></td>
-        <td><img src=images/settings.png width=600/></td>
-    </tr>
-    <tr>
-        <td>Stone theme
-        </td>
-        <td>Responsive
-        </td>
-    </tr>
-    <tr>
-        <td><img src=images/stone.png width=600/></td>
-        <td><img src=images/responsive.png width=600/></td>
-    </tr>
-    <tr>
-        <td>Search
-        </td>
-        <td>Dark Mode
-        </td>
-    </tr>
-    <tr>
-        <td><img src=images/search.png width=600/></td>
-        <td><img src=images/dark.png width=600/></td>
-    </tr>
-    <tr>
-        <td>Advanced Options
-        </td>
-        <td>Windows
-        </td>
-    </tr>
-    <tr>
-        <td><img src=images/edit.png width=600/></td>
-        <td><img src=images/windows.png width=600/></td>
-    </tr>
-</table>
-
-## 🛠️ Tech Stack
-
-- React 18
-- Vite
-- TailwindCSS
-- HeroUI (Previously NextUI)
-- i18next
-- IndexedDB
-- Nanostores
-- DayJS
 
 ## 🚀 Deployment
 
@@ -138,6 +65,17 @@ The app requires a Miniflux server to function. You'll need to provide:
 - Server URL
 - API Token / Username and Password
 
+### Multiple accounts
+
+Open the account menu at the bottom of the sidebar and choose **Add account**.
+Sign in to additional accounts in the dialog that opens.
+Each account can use a username/password or API token, on the same server or different servers.
+Choose a saved account in this menu to switch; the app reloads at the home page, and other open tabs follow the selected account.
+
+Articles, feeds, icons and sync progress are cached separately for each account.
+Appearance and app preferences are shared. Existing logins and their cached data are migrated automatically.
+Logging out removes only the current account's saved credentials and local cache, then selects another saved account if available.
+
 ## 🌍 Browser Support
 
 - Chrome (recommended)
@@ -147,8 +85,9 @@ The app requires a Miniflux server to function. You'll need to provide:
 
 ## 📱 Mobile Support
 
-The app is fully responsive and works well on mobile devices. It can also be installed as a PWA for a native app-like
-experience.
+The app is primarily designed for desktop use. While it works on mobile devices, a native RSS reader app will provide a much better experience on the go.
+
+> 💡 **Tip**: For a better native experience on mobile, consider using dedicated RSS reader apps like [Reeder](https://reederapp.com/), [Unread](https://www.goldenhillsoftware.com/unread/) or [Capy Reader](https://capyreader.com/).
 
 ## 🤝 Contributing
 
@@ -175,10 +114,6 @@ Nope, sorry folks. For now, I’m all in on the Miniflux API—gotta pick my bat
 Reeder is a fantastic RSS reader. Since my design skills are about as good as a potato's, I took some "inspiration" from
 its UI style, slapped it on, and called it a day.
 
-### 4. Any plans to add AI features like article summarization and translation?
-
-There are so many chrome extensions that can do this. I'm not sure if I want to build this into the app. Tell me what you think by opening an issue.
-
 ## 🌍 Translation
 
 ### Contributor
@@ -186,9 +121,6 @@ There are so many chrome extensions that can do this. I'm not sure if I want to 
 - 🇹🇷 Turkish: [@TaylanTatli](https://github.com/TaylanTatli)
 
 - 🇫🇷 French: [@quent1-fr](https://github.com/quent1-fr)
-
-
-
 
 
 

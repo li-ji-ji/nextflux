@@ -3,7 +3,7 @@ import { unsubscribeModalOpen, currentFeedId } from "@/stores/modalStore.js";
 import { useStore } from "@nanostores/react";
 import { useNavigate, useParams } from "react-router-dom";
 import { feeds } from "@/stores/feedsStore";
-import AlertDialog from "@/components/ui/AlertDialog.jsx";
+import CustomAlertDialog from "@/components/ui/CustomAlertDialog.jsx";
 import { useTranslation } from "react-i18next";
 import {
   deleteArticlesByFeedId,
@@ -11,6 +11,7 @@ import {
   deleteFeedIcon,
 } from "@/db/storage";
 import { starredCounts, unreadCounts } from "@/stores/feedsStore";
+import { reportError } from "@/lib/errors.js";
 
 export default function UnsubscribeModal() {
   const { t } = useTranslation();
@@ -57,12 +58,12 @@ export default function UnsubscribeModal() {
       // onClose(); // 关闭模态框并清除 feedId
       navigate("/"); // 取消订阅后返回首页
     } catch (error) {
-      console.error("取消订阅失败:", error);
+      reportError(error, "feed.unsubscribe");
     }
   };
 
   return (
-    <AlertDialog
+    <CustomAlertDialog
       title={t("articleList.unsubscribe")}
       content={`${t("articleList.unsubscribeDescription")}「${feedTitle}」`}
       isOpen={$unsubscribeModalOpen}

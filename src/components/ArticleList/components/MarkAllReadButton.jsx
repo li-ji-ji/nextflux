@@ -1,56 +1,68 @@
-import { useParams } from "react-router-dom";
 import {
-  Button,
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
-} from "@heroui/react";
+  MorphDropdownMenu,
+  MorphDropdownMenuTrigger,
+  MorphDropdownMenuContent,
+  MorphDropdownMenuGroup,
+  MorphDropdownMenuItem,
+} from "@/components/ui/morph-dropdown-menu";
+import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@/components/ui/button";
+import { useParams } from "react-router-dom";
 import { handleMarkAllRead } from "@/handlers/articleHandlers";
 import { CircleCheck } from "lucide-react";
 import { isSyncing } from "@/stores/syncStore.js";
 import { useStore } from "@nanostores/react";
-import { filter } from "@/stores/articlesStore.js";
+import { filter, markingAllAsRead } from "@/stores/articlesStore.js";
 import { useTranslation } from "react-i18next";
-
 export default function MarkAllReadButton() {
   const { t } = useTranslation();
   const { feedId, categoryId } = useParams();
   const $isSyncing = useStore(isSyncing);
+  const $markingAllAsRead = useStore(markingAllAsRead);
   const $filter = useStore(filter);
+  const isPending = $isSyncing || $markingAllAsRead;
   return (
-    <Dropdown>
-      <DropdownTrigger>
-        <Button
-          size="sm"
-          radius="full"
-          variant="light"
-          isIconOnly
-          isDisabled={$filter === "starred"}
-          isLoading={$isSyncing}
-        >
-          <CircleCheck className="size-4 text-default-500" />
-        </Button>
-      </DropdownTrigger>
-      <DropdownMenu aria-label="markAllAsRead" variant="flat">
-        <DropdownItem
-          key="markAsRead"
-          className="text-danger"
-          color="danger"
-          startContent={<CircleCheck className="size-4" />}
-          onPress={() => {
-            if (feedId) {
-              handleMarkAllRead("feed", feedId);
-            } else if (categoryId) {
-              handleMarkAllRead("category", categoryId);
-            } else {
-              handleMarkAllRead();
+    <MorphDropdownMenu>
+      <MorphDropdownMenuTrigger
+        render={
+          <Button
+            className="rounded-full"
+            variant="ghost"
+            disabled={$filter === "starred" || $markingAllAsRead || isPending}
+            aria-busy={isPending}
+            size="icon-sm"
+          >
+            {isPending ? (
+              <Spinner />
+            ) : (
+              <CircleCheck className="size-4 text-muted-foreground" />
+            )}
+          </Button>
+        }
+      />
+
+      <MorphDropdownMenuContent align="end">
+        <MorphDropdownMenuGroup aria-label="markAllAsRead">
+          <MorphDropdownMenuItem
+            variant="destructive"
+            onClick={() =>
+              ((key) => {
+                if (key !== "markAsRead") return;
+                if (feedId) {
+                  handleMarkAllRead("feed", feedId);
+                } else if (categoryId) {
+                  handleMarkAllRead("category", categoryId);
+                } else {
+                  handleMarkAllRead();
+                }
+              })("markAsRead")
             }
-          }}
-        >
-          {t("articleList.markAllRead")}
-        </DropdownItem>
-      </DropdownMenu>
-    </Dropdown>
+          >
+            <CircleCheck />
+            <span>{t("articleList.markAllRead")}</span>
+          </MorphDropdownMenuItem>
+        </MorphDropdownMenuGroup>
+      </MorphDropdownMenuContent>
+    </MorphDropdownMenu>
   );
 }
